@@ -4,8 +4,9 @@
   <title>東京都街路樹3Dモデル</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src='https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.js'></script>
-  <link href='https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.css' rel='stylesheet' />
+  <script src="https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
   <script src="https://unpkg.com/deck.gl@8.9.0/dist.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <style>
@@ -23,34 +24,20 @@
 <body>
   <div id="map"></div>
   <script type="text/javascript">
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+
     // マップの初期化
     const map = new maplibregl.Map({
-      container: 'map',
-      style: {
-        version: 8,
-        sources: {
-          "gsi-std": {
-            type: "raster",
-            tiles: [
-              "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
-            ],
-            tileSize: 256,
-            attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>'
-          }
-        },
-        layers: [
-          {
-            id: "gsi-std-layer",
-            type: "raster",
-            source: "gsi-std"
-          }
-        ]
-      },
-      zoom: 13,
-      center: [138.82546, 35.11521],
-      pitch: 58,
+      container: "map",
+      style: "dark.json",
+      zoom: 18,
+      minZoom: 0,
+      maxZoom: 23,
+      pitch: 73,
+      bearing: 93.6,
       maxPitch: 85,
-      bearing: 0,
+      center: [139.761585, 35.68232],
       hash: true,
       attributionControl: false,
     });
@@ -79,14 +66,94 @@
 
     // Attributionを折りたたみ表示
     map.addControl(new maplibregl.AttributionControl({
-      compact: true,
-      customAttribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau-22203-numazu-shi-2021" target="_blank">3D都市モデル（Project PLATEAU）沼津市（2021年度）</a>'
+      compact: true
     }));
 
-    const DATA_URL = d3.csv('tokyo_gairoju.csv');
-    const MODEL_URL = 'https://shiworks.xsrv.jp/gltf/data0.gltf';
+    const DATA_URL = d3.csv('./data/tokyo_gairoju.csv');
+    const MODEL_URL = './data//data0.gltf';
 
     map.on('load', () => {
+      // PLATEAU建築物モデル（PMTiles）ソース
+      map.addSource("plateau-bldg", {
+        type: "vector",
+        url: "pmtiles://https://pmtiles-data.s3.ap-northeast-1.amazonaws.com/plateau/PLATEAU_2023_LOD0.pmtiles",
+        minzoom: 14,
+        maxzoom: 16,
+        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物モデル（国土交通省）</a>'
+      });
+
+      // PLATEAU建築物モデル（PMTiles）レイヤ
+      map.addLayer({
+        "id": "plateau-bldg",
+        "source": "plateau-bldg",
+        "source-layer": "PLATEAU_2023_LOD0",
+        "minzoom": 14,
+        "maxzoom": 23,
+        "type": "fill-extrusion",
+        "paint": {
+          "fill-extrusion-color": "#00FF00",
+          "fill-extrusion-opacity": 0.6,
+          "fill-extrusion-height": ["get", "measured_height"]
+        }
+      });
+
+      // PLATEAU建築物モデル重心（PMTiles）ソース
+      map.addSource("plateau-bldg-centroid", {
+        type: "vector",
+        url: "pmtiles://https://pmtiles-data.s3.ap-northeast-1.amazonaws.com/plateau/PLATEAU_2023_LOD0_Centroid.pmtiles",
+        minzoom: 0,
+        maxzoom: 13,
+        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物モデル（国土交通省）</a>'
+      });
+
+      // PLATEAU建築物モデル重心（PMTiles）レイヤ
+      map.addLayer({
+        "id": "plateau-bldg-centroid-1",
+        "type": "circle",
+        "source": "plateau-bldg-centroid",
+        "source-layer": "PLATEAU_2023_LOD0_Centroid_4326fgb",
+        "minzoom": 0,
+        "maxzoom": 14,
+        "paint": {
+          "circle-color": "#6ff77c",
+          "circle-radius": 15,
+          "circle-blur": 3,
+          "circle-opacity": 0.8
+        }
+      });
+
+      // PLATEAU建築物モデル重心（PMTiles）レイヤ
+      map.addLayer({
+        "id": "plateau-bldg-centroid-2",
+        "type": "circle",
+        "source": "plateau-bldg-centroid",
+        "source-layer": "PLATEAU_2023_LOD0_Centroid_4326fgb",
+        "minzoom": 0,
+        "maxzoom": 14,
+        "paint": {
+          "circle-color": '#00ff37',
+          "circle-radius": 7.5,
+          "circle-blur": 3,
+          "circle-opacity": 0.8
+        }
+      });
+
+      // PLATEAU建築物モデル重心（PMTiles）レイヤ
+      map.addLayer({
+        "id": "plateau-bldg-centroid-3",
+        "type": "circle",
+        "source": "plateau-bldg-centroid",
+        "source-layer": "PLATEAU_2023_LOD0_Centroid_4326fgb",
+        "minzoom": 0,
+        "maxzoom": 14,
+        "paint": {
+          "circle-color": '#ffffff',
+          "circle-radius": 1.5,
+          "circle-blur": 0,
+          "circle-opacity": 1
+        }
+      });
+
       // MapboxOverlayを使ったインターリーブ
       const overlay = new deck.MapboxOverlay({
         interleaved: true,
@@ -95,10 +162,10 @@
             id: 'scenegraph-layer',
             data: DATA_URL,
             scenegraph: MODEL_URL,
-            sizeScale: 0.5,
+            sizeScale: 0.4,
             getPosition: d => [Number(d.longitude), Number(d.latitude)],
             getTranslation: [0, 0, 0],
-            getOrientation: d => [0, 0, 90],
+            getOrientation: d => [45, -40, 110],
             getColor: [0, 255, 0, 255],
             _lighting: 'pbr',
           })
@@ -106,6 +173,17 @@
       });
 
       map.addControl(overlay);
+
+      // Skyレイヤ
+      map.setSky({
+        "sky-color": "#199EF3",
+        "sky-horizon-blend": 0.7,
+        "horizon-color": "#f0f8ff",
+        "horizon-fog-blend": 0.8,
+        "fog-color": "#2c7fb8",
+        "fog-ground-blend": 0.9,
+        "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 0]
+      });
 
     });
   </script>
