@@ -1,0 +1,8 @@
+# b3dmからglbへの変換
+npx 3d-tiles-tools convertB3dmToGlb -i D:\GitHub@shiwaku\tokyo-gairoju-3d-on-maplibre\data\data0.b3dm -o D:\GitHub@shiwaku\tokyo-gairoju-3d-on-maplibre\data\data0.glb
+
+gltf-transform copy data0.glb data0.gltf
+gltf-transform run pipeline.json data0.gltf output.gltf
+
+
+
