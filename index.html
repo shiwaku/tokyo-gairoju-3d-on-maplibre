@@ -66,7 +66,8 @@
 
     // Attributionを折りたたみ表示
     map.addControl(new maplibregl.AttributionControl({
-      compact: true
+      compact: true,
+      customAttribution: '<a href="https://twitter.com/shi__works" target="_blank">X(旧Twitter)</a> | <a href="https://github.com/shiwaku/tokyo-gairoju-3d-on-maplibre" target="_blank">GitHub</a> | <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000014d2000000029" target="_blank">東京都オープンデータカタログサイト 街路樹（都道：23区）</a> '
     }));
 
     const DATA_URL = d3.csv('./data/tokyo_gairoju.csv');
